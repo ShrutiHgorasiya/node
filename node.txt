@@ -1,0 +1,949 @@
+===========npm init(not forgot)====
+express mongoose
+
+ejs
+express
+express-fileupload
+jsonwebtoken
+mongoose
+nodemon
+
+
+===make one images folder in public====
+index.js
+=================
+const express = require('express')
+const index = express();
+
+const mongoose = require('mongoose')
+
+const fileupload = require('express-fileupload')
+
+mongoose.connect("mongodb://localhost/temp",{useNewUrlParser:true,useUnifiedTopology:true},(err)=>console.log(err))
+
+const userSchema = new mongoose.Schema({
+    name: String,
+    address:String,
+    pic:String,
+    email:String,
+    password:String
+})
+
+const UserModel = mongoose.model('students',userSchema)
+
+index.use(express.urlencoded({extended:true}))
+
+//const routes = express().router();
+
+//index.set("static","./public/");
+index.set('view engine','ejs');
+index.set("static","./views/");
+
+
+index.get("/getImage/:image",(req,res)=>{
+    return res.sendFile("./public/images/"+req.params.image, {root: "./"})
+})
+
+index.get('/',(req,res)=>{
+    
+    // UserModel.find((err,data)=>{
+    //     if(err) console.log(err);
+    //     else return res.render('display',{data})
+    // })
+
+    UserModel.find({}).then(data => {
+        return res.render('display',{data})
+        // return res.status(200).json(result)
+    }).catch(error => {
+        return res.status(201).json(error)
+    })
+})
+
+index.get('/insertPage',(req,res)=>{
+    res.render('insert');
+})
+
+index.post('/insert',fileupload({
+    useTempFiles:true,
+    tempFileDir:'/tmp/'
+}),(req,res)=>{
+
+    req.files.image.mv('./public/images/'+req.files.image.name);
+    var image = req.files.image.name
+    const data = new UserModel({
+        name:req.body.name,
+        address:req.body.address,
+        pic:image,
+        email:req.body.email,
+        password:req.body.password
+    })
+    data.save().then(result => {
+        res.redirect("/")
+    }).catch(error => console.log(error))
+})
+
+index.get('/display/:id',(req,res)=>{
+    UserModel.findOne({_id:req.params.id}).then(data => {
+        return res.render('update',{data})
+    }).catch(error => {
+        return res.status(201).json(error)
+    })
+})
+
+index.post('/update/:id',fileupload({
+    useTempFiles:true,
+    tempFileDir:'/temp/'
+}),(req,res)=>{
+    req.files.image.mv('/../images/'+req.files.images);
+    var image = req.files.image.name
+    UserModel.updateOne({_id:req.params.id},{
+        $set:{
+            name:req.body.name,
+            address:req.body.address,
+            pic:image
+        }
+    },(err,data)=>{
+        if(err) return res.status(201).json(err)
+        else return res.redirect("/")
+    })
+})
+
+index.get('/delete/:id',(req,res)=>{
+    UserModel.deleteOne({_id:req.params.id}).then(result => {
+        return res.redirect("/");
+    }).catch(error => {
+        return res.status(201).json(error)
+    })
+})
+
+index.listen(5000);
+
+
+
+=====================
+disply.ejs
+<html>
+    <body>
+        <a href="/insertPage">Add Student</a>
+        <table border="5px">
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Pic</th>
+                <th>Update</th>
+                <th>Delete</th>
+            </tr>
+            <% data.forEach(function(item){ %>
+                <tr>
+                    <th><%= item.name%></th>
+                    <th><%= item.address%></th>
+                    <th><img src="http://localhost:5000/getImage/<%= item.pic%>" style="height: 100px; width: 100px;"></th>
+                    <th><a href="/display/<%= item._id%>">Update</a></th>
+                    <th><a href="/delete/<%= item._id%>">Delete</a></th>
+                </tr>
+            <% }) %>
+        </table>
+    </body>
+</html>
+
+
+==============
+insert.ejs
+==============
+<html>
+    <body>
+        <form method="post" action="/insert" enctype="multipart/form-data">
+            Name : <input type="text" name="name" /><br />
+            Address : <input type="text" name="address"/><br />
+            Image : <input type="file" name="image" /><br />
+            Email : <input type="text" name="email"/><br />
+            Password : <input type="password" name="password"><br />
+            <input type="submit" /> 
+        </form>
+    </body>
+</html>
+
+
+
+
+===============
+update.ejs
+===============
+<html>
+    <body>
+        <form method="post" enctype="multipart/form-data" action="/update/<%= data._id%>">
+            Name : <input type="text" name="name" value="<%= data.name%>"/>
+            Address : <input type="text" name="address" value="<%= data.address%>" />
+            Image : <input type="file" name="image" value="<%= data.image%>" />
+            <input type="submit" /> 
+        </form>
+    </body>
+</html>
+
+=======================================================================
+=========================AngularApp=================================
+
+angular-instll==npm install -g @angular/cli
+ -------Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted
+new angular cli app: ng new AngularApp
+installing typescript: npm install -g typescript@4.4.2
+For starting Angular App: ng serve --open
+cd ngbookapi
+
+npm install popper  --save
+npm install jquery  --save
+npm install bootstrap  --save
+
+
+Configure angular.json file, both app and test sections styles or only default module app.
+
+
+"styles": [
+   "src/styles.css",
+   "./node_modules/bootstrap/dist/css/bootstrap.min.css"
+ ],
+ "scripts": ["./node_modules/jquery/dist/jquery.min.js"]
+ ng serve -o
+ 
+ 3) Create components
+ng g c book-add --skip-tests 
+ng g c book-get --skip-tests 
+ng g c book-edit --skip-tests 
+
+=======================================================insert&display in Angular==================================
+
+Configure angular.json file, both app and test sections styles or only default module app.
+
+
+"styles": [
+   "src/styles.css",
+   "./node_modules/bootstrap/dist/css/bootstrap.min.css"
+ ],
+ "scripts": ["./node_modules/jquery/dist/jquery.min.js"]
+ ng serve -o
+ ==============================================
+ 3) Create components
+ng g c book-add --skip-tests 
+ng g c book-get --skip-tests 
+ng g c book-edit --skip-tests 
+
+================================
+app-rounting-modele.ts==2changes
+
+
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { ProductComponent } from './product/product.component';
+import { UserComponent } from './user/user.component';
+const routes: Routes = [
+  {path:"product",component:ProductComponent},
+  {path:"user",component:UserComponent}
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+
+===================================
+app.componente.html
+
+
+<a routerLink="/product">product</a>
+<a routerLink="/user">user</a>
+<router-outlet></router-outlet>
+=============================
+app.component.spec.ts
+
+import { TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { AppComponent } from './app.component';
+
+describe('AppComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [
+        RouterTestingModule
+      ],
+      declarations: [
+        AppComponent
+      ],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it(`should have as title 'product'`, () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    expect(app.title).toEqual('product');
+  });
+
+  it('should render title', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.content span')?.textContent).toContain('product app is running!');
+  });
+});
+
+==============================
+app.module.ts
+import { NgModule } from '@angular/core';
+import { FormsModule,ReactiveFormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { ProductComponent } from './product/product.component';
+import { UserComponent } from './user/user.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    ProductComponent,
+    UserComponent
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    FormsModule,
+    ReactiveFormsModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+=============================
+
+app.component.ts
+
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'product';
+}
+
+=============================
+prod.ts====right click on app and give .ts extension
+export interface prod{
+    id:number;
+    name:string;
+}
+
+
+================================
+ProductClass.ts
+
+
+import { prod } from "./prod";
+export const PRODUCTS: prod[] = [
+    { id: 11, name: 'Dr Nice' },
+    { id: 12, name: 'Narco' },
+    { id: 13, name: 'Bombasto' },
+    { id: 14, name: 'Celeritas' },
+    { id: 15, name: 'Magneta' },
+    { id: 16, name: 'RubberMan' },
+    { id: 17, name: 'Dynama' },
+    { id: 18, name: 'Dr IQ' },
+    { id: 19, name: 'Magma' },
+    { id: 20, name: 'Tornado' }
+  ];
+================================
+productcomponenet.spec.ts
+
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { ProductComponent } from './product.component';
+
+describe('ProductComponent', () => {
+  let component: ProductComponent;
+  let fixture: ComponentFixture<ProductComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ ProductComponent ]
+    })
+    .compileComponents();
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(ProductComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+
+=================================
+product.component.html
+
+<p>product works!</p>
+<p>{{roll_no}}</p>
+<p> {{content}} </p>
+<p>{{myDate | date: 'dd-MM-yyyy'}}</p>
+<table>
+    <ul>
+    <li *ngFor="let product of pros">
+      <span> {{product.id}}{{product.name}}</span> 
+       
+    </li>
+    </ul>
+    <!-- <select [(ngModel)]="selected_peeps">
+        <option *ngFor="let people of peoples"
+          [attr.data-age]="people.age"
+          [attr.data-occupation]="people.occupation">
+          {{ people.name }}
+        </option>    
+      </select> -->
+      <select id='peeps' name='people'>
+        <option *ngFor="let product of pros" [value]="product.id">
+          {{product.name}}
+        </option>    
+    </select>
+
+    
+</table>
+=================================\
+product.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormsModule,FormControl,Validators } from '@angular/forms';
+import { prod } from '../prod';
+import { PRODUCTS } from '../productClass';
+@Component({
+  selector: 'app-product',
+  templateUrl: './product.component.html',
+  styleUrls: ['./product.component.css']
+})
+export class ProductComponent implements OnInit {
+  roll_no:number = 4;
+  myDate: Date = new Date();
+  content : string = "Hello World";
+  
+  pros = PRODUCTS;
+  
+  constructor() { }
+
+  ngOnInit(): void {
+  }
+  
+}
+
+==================================
+user.component.html
+
+<p>user works!</p>
+<p>{{firstn}}</p>
+<p>{{lastn}}</p>
+<p>{{email}}</p>
+<!-- <form [FormGroup]=userform (ngSubmit)=onsubmit(userform.value)> -->
+    <!-- <form #userform="ngForm" (submit)=onsubmit()> -->
+
+<!-- <form [formGroup]="userform" (ngSubmit)="submit(userform.value)">
+    first Name:<input type="text" name="firstn" formControlName="firstn">
+    last Name:<input type="text" name="lastn" formControlName="lastn">
+    Email:<input type="text" name="email" formControlName="email">
+    <input type="submit" [disabled]="userform.invalid">
+
+</form> -->
+<form #userform="ngForm" (submit)="onsubmit(userform.value)">
+   
+    first Name:<input type="text" name="firstn" ngModel>
+    last Name:<input type="text" name="lastn" ngModel>
+    Email:<input type="text" name="email" ngModel>
+   
+    <input type="submit" value="Submit" >
+</form>
+
+==================================
+
+user.componenet.ts
+
+
+
+import { Component, OnInit } from '@angular/core';
+import { NgForm } from '@angular/forms';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+@Component({
+  selector: 'app-user',
+  templateUrl: './user.component.html',
+  styleUrls: ['./user.component.css']
+})
+export class UserComponent implements OnInit {
+  firstn : any;
+  lastn :any;
+  email:any;
+  constructor() {
+
+   }
+
+  ngOnInit(): void {
+  }
+  // submit(data:any){
+  
+  //   this.firstn=data.firstn;
+  //   this.lastn=data.lastn;
+  //   this.email=data.email;
+  // }
+  onsubmit(data :any) :void
+  {
+    this.firstn=data.firstn;
+    this.lastn=data.lastn;
+    this.email=data.email;
+    alert(data.firstn.length +"   "+data.email);
+  }
+}
+
+================================
+user.componenet..spec.ts
+
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { UserComponent } from './user.component';
+
+describe('UserComponent', () => {
+  let component: UserComponent;
+  let fixture: ComponentFixture<UserComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ UserComponent ]
+    })
+    .compileComponents();
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(UserComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});
+
+
+=============================
+
+user.component.html
+<p>user works!</p>
+<p>{{firstn}}</p>
+<p>{{lastn}}</p>
+<p>{{email}}</p>
+<!-- <form [FormGroup]=userform (ngSubmit)=onsubmit(userform.value)> -->
+    <!-- <form #userform="ngForm" (submit)=onsubmit()> -->
+
+<!-- <form [formGroup]="userform" (ngSubmit)="submit(userform.value)">
+    first Name:<input type="text" name="firstn" formControlName="firstn">
+    last Name:<input type="text" name="lastn" formControlName="lastn">
+    Email:<input type="text" name="email" formControlName="email">
+    <input type="submit" [disabled]="userform.invalid">
+
+</form> -->
+<form #userform="ngForm" (submit)="onsubmit(userform.value)">
+   
+    first Name:<input type="text" name="firstn" ngModel>
+    last Name:<input type="text" name="lastn" ngModel>
+    Email:<input type="text" name="email" ngModel>
+   
+    <input type="submit" value="Submit" >
+</form>
+
+
+
+=======================================================End insert&display in Angular==================================
+
+
+ 
+ 4) In app.routing.module.ts
+ 
+import { BookAddComponent } from './book-add/book-add.component';
+import { BookEditComponent } from './book-edit/book-edit.component';
+import { BookGetComponent } from './book-get/book-get.component';
+ 
+const routes: Routes = [
+  {
+    path: 'book/create',
+    component: BookAddComponent
+  },
+  {
+    path: 'book/edit/:id',
+    component: BookEditComponent
+  },
+  {
+    path: 'book',
+    component: BookGetComponent
+  }
+];
+
+ Create Angular Navigation in app.component.html file’s <router-outlet> directive will display 
+
+
+<h1 align="center">Welcome to Angular!!</h1>
+
+
+<table border="1" width="90%" align="center">
+  <tr><td align="center"><h1>Header</h1></td></tr>
+  <tr><td>
+        <table border="1" width="100%">
+      <tr>
+        <td>
+            <ul>
+                <li>
+                  <a routerLink="book/create" routerLinkActive="active">
+                    Insert Book
+                  </a>
+                </li>
+                <li>
+                  <a routerLink="book" routerLinkActive="active">
+                    Books
+                  </a>
+                </li> 
+              </ul>
+              
+        </td>
+        <td width="70%">
+          
+            <router-outlet></router-outlet>
+        </td>
+        <td> </td>
+      </tr>
+    </table>
+  </td></tr>
+  <tr><td align="center"><h3>Footer</h3></td></tr>
+</table>
+
+
+6) Add Bootstrap Form
+
+
+ use ReactiveFormsModule
+
+
+import the ReactiveFormsModule inside the app.module.ts file.
+
+
+// app.module.ts
+
+
+import { ReactiveFormsModule } from '@angular/forms';
+
+
+imports: [
+    ...
+    ReactiveFormsModule
+],
+
+
+-------------------------------
+
+
+
+
+
+
+// book-add.component.ts
+import { FormGroup,  FormBuilder,  Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+---
+  angForm: FormGroup;
+  constructor(private route: ActivatedRoute,
+    private router: Router,
+    private fb: FormBuilder
+    ) {
+    this.angForm = this.fb.group({
+      name: ['', Validators.required ],
+      price: ['', Validators.required ],
+      quantity: ['', Validators.required ]
+    });
+  }
+  
+  addBook(name :string, price :number,quantity :number)
+  {
+    alert(name +" "+price+" "+quantity);
+  }
+
+
+
+
+
+
+// book-add.component.html
+
+
+<div  class="card">
+    <div class="card-body">
+      <form [formGroup]="angForm" novalidate>
+  
+        <div class="form-group">
+          <label class="col-md-4">Book Name</label>
+          <input type="text"  formControlName="name" class="form-control" />
+        </div>
+        <div *ngIf="angForm.controls['name'].errors && angForm.controls['name'].invalid && (angForm.controls['name'].dirty || angForm.controls['name'].touched)" class="alert alert-danger">
+          <div *ngIf="angForm.controls['name'].errors.required">
+            Book Name is required.
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="col-md-4">Price </label>
+          <input type="text"  formControlName="price" class="form-control" />
+        </div>
+        <div *ngIf="angForm.controls['price'].errors && angForm.controls['price'].invalid && (angForm.controls['price'].dirty || angForm.controls['price'].touched)" class="alert alert-danger">
+          <div *ngIf="angForm.controls['price'].errors.required">
+            Price is required.
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="col-md-4">Quantity </label>
+          <input type="text"  formControlName="quantity" class="form-control" />
+        </div>
+        <div *ngIf="angForm.controls['quantity'].errors && angForm.controls['quantity'].invalid && (angForm.controls['quantity'].dirty || angForm.controls['quantity'].touched)" class="alert alert-danger">
+          <div *ngIf="angForm.controls['quantity'].errors.required">
+            Quantity is required.
+          </div>
+        </div>
+  
+        <div class="form-group">
+          <button  type="button" (click)="addBook(angForm.controls['name'].value, angForm.controls['price'].value, angForm.controls['quantity'].value)"
+              [disabled]="angForm.pristine || angForm.invalid" 
+              class="btn btn-primary">
+              Add Book
+           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+9) Configure the HttpClientModule
+
+
+Import the HttpClientModule inside the app.module.ts file.
+
+
+// app.module.ts
+import { HttpClientModule } from '@angular/common/http';
+
+
+imports: [
+    BrowserModule,
+    AppRoutingModule,
+    ReactiveFormsModule,
+    HttpClientModule
+  ],
+  
+10) Create a Book class (model).
+
+
+ng g class book --skip-tests 
+ // Book.ts
+ 
+export default class Book {
+    _id: String="";
+    name: String="";
+    price: Number=0;
+    quantity: Number=0;
+}
+
+
+11) Create an Angular Service file.
+
+
+ng g service book --skip-tests
+
+
+Now, import the book.service.ts file into the app.module.ts file.
+
+
+// app.module.ts
+import { BookService } from './book.service';
+
+
+providers: [ BookService ]
+
+
+12) book.service.ts -------------
+
+
+import { HttpClient } from '@angular/common/http';
+import Book from "./book";
+import { Observable } from 'rxjs';
+---
+  uri = 'http://localhost:8000/books&#39;;
+
+
+  constructor(private http: HttpClient) { }
+
+
+  addBook(name :string, price :number, quantity :number) {
+    const obj = {
+      name: name,
+      price: price,
+      quantity: quantity
+    };
+    console.log(obj);
+    this.http.post(`${this.uri}`, obj).subscribe(res => console.log('Done'));
+  }
+
+
+  getBooks() :Observable<Book[]> {    
+    return this.http.get<Book[]>(`${this.uri}`);
+  }
+
+
+  editBook(id :any) {
+    return this
+            .http
+            .get(`${this.uri}/${id}`);
+    }
+
+
+    updateBook(id :any,name :string, price :number, quantity :number) {
+
+
+      const obj = {
+          
+          name: name,
+          price: price,
+          quantity: quantity
+        };
+      this
+        .http
+        .put(`${this.uri}/${id}`, obj)
+        .subscribe(res => console.log('Done'));
+    }
+
+
+    deleteBook(id :any) {
+      return this
+                .http
+                .delete(`${this.uri}/${id}`);
+    }
+
+
+
+
+Next) book-add.component.ts ------------
+
+
+import { BookService } from '../book.service';
+
+
+constructor(private route: ActivatedRoute,
+    .
+.
+private bs: BookService
+) 
+{
+    
+  }
+  
+    addBook(name, price, quantity) {
+    this.bs.addBook(name, price, quantity);
+    this.router.navigate(['book']);
+  }
+
+
+13)  Show books & Delete
+ //  book-get.coponent.ts
+ 
+import { Component, OnInit } from '@angular/core';
+import Book from '../book';
+import { BookService } from '../book.service';
+
+
+@Component({
+  selector: 'app-book-get',
+  templateUrl: './book-get.component.html',
+  styleUrls: ['./book-get.component.css']
+})
+export class BookGetComponent implements OnInit {
+  books: Book[]=[];
+  constructor(private bs: BookService) { }
+
+
+  ngOnInit() {
+    this.bs
+      .getBooks()
+      .subscribe((data: Book[]) => {
+        this.books = data;
+    });
+  }
+
+
+
+
+//book-get.component.html
+<table class="table table-hover">
+  <thead>
+  <tr>
+      <td>Book Name</td>
+      <td>Price</td>
+      <td>Quantity</td>
+      <td colspan="2">Actions</td>
+  </tr>
+  </thead>
+
+
+  <tbody>
+      <tr *ngFor="let book of books">
+          <td>{{ book.name }}</td>
+          <td>{{ book.price }}</td>
+          <td>{{ book.quantity }}</td>
+          <td><a [routerLink]="['/book/edit', book._id]" class="btn btn-primary">Edit</a></td>
+      </tr>
+
+  </tbody>
+</table>
+
+
+
+
+=============chatboot============
+let express = require('express')
+let app = express();
+
+let http = require('http');
+let server = http.Server(app);
+
+let socketIO = require('socket.io');
+let io = socketIO(server);
+
+//let app = require("express")();
+//let http = require("http").Server(app);
+//let io = require("socket.io")(http);
+
+
+const port = process.env.PORT || 5000;
+
+io.on('connection', (socket) => {
+    console.log('user connected');
+    socket.on('client-message', (message) => {
+      console.log(message);
+      io.emit('server-message', message);
+    });
+});
+
+server.listen(port, () => {
+    console.log(`started on port: ${port}`);
+});
+
+
